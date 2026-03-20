@@ -26,6 +26,7 @@ export default class GetById extends BaseCommand<typeof GetById> {
       labels: data.labels,
       url: data.url,
       members: await this.cache.convertMemberIdsToEntity(data.idMembers),
+      list: data.idList,
     };
   }
 
@@ -40,6 +41,7 @@ export default class GetById extends BaseCommand<typeof GetById> {
       `Due: ${data.due || "None"}`,
       `Labels: ${labels}`,
       `Members: ${members}`,
+      `List ID: ${data.list}`,
       `Description: ${data.description || "None"}`,
     ];
     return lines.join("\n");
