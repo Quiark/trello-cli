@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x, 24.x]
+        node-version: [22.x, 24.x, 26.x]
 
     env:
       CI: true
@@ -28,7 +28,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - uses: pnpm/action-setup@v2
         with:
-          version: 8
+          version: 10
           run_install: false
       - name: Get pnpm store directory
         id: pnpm-cache
