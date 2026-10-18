@@ -24,7 +24,7 @@ export default class {
   }
 
   async sync(): Promise<void> {
-    this.reset();
+    await this.bootstrap();
     const sync = new Sync(this.db, this.appKey, this.token);
     return sync.run();
   }

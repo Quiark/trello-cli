@@ -25,6 +25,14 @@ class DB {
     return this.db.prepare(sql).run(...args);
   }
 
+  transaction<T>(write: () => T): T {
+    return this.db.transaction(write)();
+  }
+
+  close() {
+    this.db.close();
+  }
+
   upsert(table: string, data: any) {
     let sql = `REPLACE INTO ${table} `;
     sql += `(${Object.keys(data).join(", ")}) VALUES `;

@@ -12,6 +12,8 @@ jest.mock("./db", () => {
 });
 
 import Cache from "./index";
+import Setup from "./setup";
+import Sync from "./sync";
 
 let cache: Cache;
 
@@ -19,6 +21,24 @@ beforeEach(() => {
   cache = new Cache("/tmp/test", "key", "token");
   mockGet.mockReset();
   mockAll.mockReset();
+});
+
+describe("sync", () => {
+  it("bootstraps the schema without clearing the cache", async () => {
+    const bootstrap = jest
+      .spyOn(Setup.prototype, "bootstrap")
+      .mockImplementation(() => {});
+    const run = jest.spyOn(Sync.prototype, "run").mockResolvedValue(undefined);
+    const reset = jest.spyOn(cache, "reset");
+    try {
+      await cache.sync();
+      expect(bootstrap).toHaveBeenCalledTimes(1);
+      expect(run).toHaveBeenCalledTimes(1);
+      expect(reset).not.toHaveBeenCalled();
+    } finally {
+      jest.restoreAllMocks();
+    }
+  });
 });
 
 describe("getBoardIdByName", () => {

@@ -29,6 +29,14 @@ export default class {
       boardId: "VARCHAR",
       listId: "VARCHAR",
       shortLink: "VARCHAR",
+      description: "TEXT",
+      due: "VARCHAR",
+      dueComplete: "INT",
+      start: "VARCHAR",
+      url: "VARCHAR",
+      labels: "TEXT",
+      memberIds: "TEXT",
+      dateLastActivity: "VARCHAR",
     },
     members: {
       id: "VARCHAR",
@@ -62,6 +70,14 @@ export default class {
       sql = `${sql} (${columns.join(", ")})`;
 
       this.db.run(sql);
+      const existing = this.db.all(`PRAGMA table_info(${table})`, []) as {
+        name: string;
+      }[];
+      for (const [name, type] of Object.entries(fields)) {
+        if (!existing.some((column) => column.name === name)) {
+          this.db.run(`ALTER TABLE ${table} ADD COLUMN ${name} ${type}`);
+        }
+      }
     });
   }
 

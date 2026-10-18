@@ -1,5 +1,6 @@
 import { BaseCommand } from "../../BaseCommand";
 import { Flags } from "@oclif/core";
+import { fetchCardComments } from "../../card-comments";
 
 export default class GetById extends BaseCommand<typeof GetById> {
   static description = "Show card details by ID";
@@ -9,7 +10,7 @@ export default class GetById extends BaseCommand<typeof GetById> {
   static flags = {
     id: Flags.string({ required: true, description: "The Trello card ID" }),
     comments: Flags.boolean({
-      description: "Include comments on the card",
+      description: "Fetch and include all comments on the card",
       default: false,
     }),
   };
@@ -21,14 +22,10 @@ export default class GetById extends BaseCommand<typeof GetById> {
 
     let comments: any[] = [];
     if (this.flags.comments) {
-      const actions = await this.client.cards.getCardActions({
-        id: this.flags.id,
-        filter: "commentCard",
-      });
-      comments = actions;
+      comments = await fetchCardComments(this.client, this.flags.id);
     }
 
-    this.output({ ...card, comments });
+    await this.output({ ...card, comments });
   }
 
   protected async toData(data: any) {

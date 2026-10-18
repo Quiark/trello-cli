@@ -1,8 +1,9 @@
 import { BaseCommand } from "../../BaseCommand";
 import { Flags } from "@oclif/core";
+import { fetchCardComments } from "../../card-comments";
 
 export default class CardCommentsById extends BaseCommand<typeof CardCommentsById> {
-  static description = "List comments on a card by ID";
+  static description = "Fetch all comments on a card by ID";
 
   protected defaultOutput = "fancy" as const;
 
@@ -11,11 +12,8 @@ export default class CardCommentsById extends BaseCommand<typeof CardCommentsByI
   };
 
   async run(): Promise<void> {
-    const actions = await this.client.cards.getCardActions({
-      id: this.flags.id,
-      filter: "commentCard",
-    });
-    this.output(actions);
+    const actions = await fetchCardComments(this.client, this.flags.id);
+    await this.output(actions);
   }
 
   protected toData(data: any) {

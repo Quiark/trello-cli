@@ -24,6 +24,39 @@ To see a list of available commands, run `trello --help`. Each command contains 
 
 To see all available subcommands, run `trello <command> --help` e.g. `trello card --help`
 
+### Local Sync
+
+Run `trello sync` to update `~/.trello-cli/<profile>/trello.db` (the default
+profile is `default`). Sync is one-way from Trello to SQLite.
+
+Each run scans active boards, lists, and card IDs/activity timestamps. Full card
+content is downloaded only for new cards or cards whose activity timestamp or
+location changed. Cached content includes the description, due/start dates,
+completion state, labels, member IDs, and URL. Existing databases are migrated
+automatically.
+
+Archived boards, archived lists, and their cards are excluded, as are individually
+archived cards. Cards deleted or no longer in the accessible active scope are
+removed after a successful scan. Cache updates are committed together only after
+all requests succeed; failed scans preserve the previous data.
+
+Comments, attachments, and checklists are not synced. This cache does not make
+the CLI or interactive UI offline: existing read commands still query Trello.
+
+### Card Comments
+
+Comments are fetched remotely only when explicitly requested for a specific card:
+
+```bash
+trello card:get-by-id --id CARD_ID --comments
+trello card:comments-by-id --id CARD_ID --format json
+trello card:comments --board "My Board" --list "To Do" --card "My Card"
+```
+
+These commands automatically fetch every page of comments, preserving Trello's
+newest-first order. Without `--comments`, `card:get-by-id` does not request comments.
+Comment fetching does not write to the local cache.
+
 ## Interactive Terminal UI
 
 Launch a full-screen interactive terminal UI with:
