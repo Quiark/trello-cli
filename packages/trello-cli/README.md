@@ -29,6 +29,19 @@ To see all available subcommands, run `trello <command> --help` e.g. `trello car
 Run `trello sync` to update `~/.trello-cli/<profile>/trello.db` (the default
 profile is `default`). Sync is one-way from Trello to SQLite.
 
+Set `TRELLO_CLI_DB_DIR` to store databases under a different root directory:
+
+```bash
+TRELLO_CLI_DB_DIR=/data/trello trello sync
+TRELLO_CLI_DB_DIR=/data/trello TRELLO_CLI_PROFILE=work trello sync
+```
+
+These use `/data/trello/default/trello.db` and `/data/trello/work/trello.db`,
+respectively. The directory is created automatically. This setting applies to all
+commands; credentials remain in `~/.trello-cli/<profile>/config.json`. Existing
+databases are not moved automatically. An unset or empty value uses the default
+location.
+
 Each run scans active boards, lists, and card IDs/activity timestamps. Full card
 content is downloaded only for new cards or cards whose activity timestamp or
 location changed. Cached content includes the description, due/start dates,

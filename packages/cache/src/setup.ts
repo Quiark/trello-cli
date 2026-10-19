@@ -25,6 +25,8 @@ export default class {
     },
     cards: {
       id: "VARCHAR",
+      // Trello's numeric ticket number, scoped to its board.
+      idShort: "INT",
       name: "VARCHAR",
       boardId: "VARCHAR",
       listId: "VARCHAR",

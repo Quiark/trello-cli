@@ -23,10 +23,10 @@ export default class {
     return r.teardown();
   }
 
-  async sync(): Promise<void> {
+  async sync(onProgress?: (message: string) => void): Promise<void> {
     await this.bootstrap();
     const sync = new Sync(this.db, this.appKey, this.token);
-    return sync.run();
+    return sync.run(onProgress);
   }
 
   async getBoard(id: string): Promise<string> {

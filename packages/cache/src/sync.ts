@@ -2,9 +2,9 @@ import * as https from "https";
 import * as querystring from "querystring";
 import DB from "./db";
 
-const inventoryFields = "id,closed,idBoard,idList,dateLastActivity";
+const inventoryFields = "id,idShort,closed,idBoard,idList,dateLastActivity";
 const contentFields =
-  "id,closed,idBoard,idList,name,shortLink,desc,due,dueComplete,start,url,labels,idMembers,dateLastActivity";
+  "id,idShort,closed,idBoard,idList,name,shortLink,desc,due,dueComplete,start,url,labels,idMembers,dateLastActivity";
 const tables = [
   "orgs",
   "boards",
@@ -23,7 +23,8 @@ export default class Sync {
     protected token: string
   ) {}
 
-  async run(): Promise<void> {
+  async run(onProgress?: (message: string) => void): Promise<void> {
+    onProgress?.("Fetching open boards...");
     const snapshot: Snapshot = {
       orgs: new Map(),
       boards: new Map(),
@@ -45,8 +46,10 @@ export default class Sync {
       })
     );
 
-    for (const summary of boards) {
+    onProgress?.(`Found ${boards.length} boards`);
+    for (const [boardIndex, summary] of boards.entries()) {
       if (this.isClosed(summary)) continue;
+      onProgress?.(`Fetching board ${boardIndex + 1}/${boards.length}...`);
       const board = await this.api(`/boards/${summary.id}`, {
         lists: "all",
         list_fields: "id,name,idBoard,closed",
@@ -57,6 +60,7 @@ export default class Sync {
       });
       this.entity(board);
       if (this.isClosed(board)) continue;
+      onProgress?.(`Fetching labels and card inventory for ${board.name}...`);
       snapshot.boards.set(board.id, {
         id: board.id,
         name: board.name,
@@ -112,9 +116,15 @@ export default class Sync {
       const inventory = await this.pages(`/boards/${board.id}/cards/open`, {
         fields: inventoryFields,
       });
-      for (const card of inventory) {
+      for (const [cardIndex, card] of inventory.entries()) {
+        if (cardIndex % 25 === 0) {
+          onProgress?.(
+            `${board.name}: processing cards ${cardIndex}/${inventory.length}`
+          );
+        }
         if (
           card.idBoard !== board.id ||
+          !Number.isInteger(card.idShort) ||
           typeof card.idList !== "string" ||
           typeof card.dateLastActivity !== "string"
         ) {
@@ -128,7 +138,7 @@ export default class Sync {
           previous.boardId === card.idBoard &&
           previous.listId === card.idList
         ) {
-          snapshot.cards.set(card.id, previous);
+          snapshot.cards.set(card.id, { ...previous, idShort: card.idShort });
           continue;
         }
         const content = await this.api(`/cards/${card.id}`, {
@@ -137,6 +147,7 @@ export default class Sync {
         this.entity(content);
         if (
           content.id !== card.id ||
+          !Number.isInteger(content.idShort) ||
           typeof content.idBoard !== "string" ||
           typeof content.idList !== "string"
         ) {
@@ -160,6 +171,7 @@ export default class Sync {
         }
         snapshot.cards.set(content.id, {
           id: content.id,
+          idShort: content.idShort,
           name: content.name,
           boardId: content.idBoard,
           listId: content.idList,
@@ -174,6 +186,9 @@ export default class Sync {
           dateLastActivity: content.dateLastActivity,
         });
       }
+      onProgress?.(
+        `${board.name}: processed ${inventory.length}/${inventory.length} cards`
+      );
     }
 
     // Label renames/deletions need not change the activity timestamp of each card.
@@ -190,6 +205,9 @@ export default class Sync {
     }
 
     // Do not prune or replace any cached data until the complete snapshot is available.
+    onProgress?.(
+      `Saving ${snapshot.cards.size} cards from ${snapshot.boards.size} boards...`
+    );
     this.db.transaction(() => {
       for (const table of tables) {
         const existing = this.db.all(`SELECT * FROM ${table}`, []) as Row[];

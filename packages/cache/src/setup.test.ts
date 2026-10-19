@@ -17,9 +17,13 @@ describe("cache schema migration", () => {
       setup.bootstrap();
       setup.bootstrap();
       expect(
-        db.get("SELECT id, name, description, dateLastActivity FROM cards", [])
+        db.get(
+          "SELECT id, idShort, name, description, dateLastActivity FROM cards",
+          []
+        )
       ).toEqual({
         id: "card1",
+        idShort: null,
         name: "Existing card",
         description: null,
         dateLastActivity: null,

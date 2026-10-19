@@ -76,7 +76,7 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
       });
 
       this.cache = new Cache(
-        path.join(this.configDir, this.profile),
+        path.join(process.env.TRELLO_CLI_DB_DIR || this.configDir, this.profile),
         appKey,
         token
       );

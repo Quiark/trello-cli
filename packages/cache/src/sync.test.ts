@@ -37,6 +37,7 @@ describe("incremental sync", () => {
     cards = [
       {
         id: "card1",
+        idShort: 42,
         idBoard: "board1",
         idList: "list1",
         closed: false,
@@ -85,6 +86,7 @@ describe("incremental sync", () => {
     await sync.run();
     expect(db.get("SELECT * FROM cards WHERE id=?", ["card1"])).toEqual({
       id: "card1",
+      idShort: 42,
       name: "Ticket",
       boardId: "board1",
       listId: "list1",
@@ -102,7 +104,7 @@ describe("incremental sync", () => {
       api.mock.calls.every(([url]) => !/actions|comments|attachments/.test(url))
     ).toBe(true);
     expect(api).toHaveBeenCalledWith("/boards/board1/cards/open", {
-      fields: "id,closed,idBoard,idList,dateLastActivity",
+      fields: "id,idShort,closed,idBoard,idList,dateLastActivity",
       limit: 1000,
       sort: "-id",
     });
@@ -117,6 +119,29 @@ describe("incremental sync", () => {
       false
     );
     expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it("backfills ticket numbers without downloading unchanged content", async () => {
+    await sync.run();
+    db.run("UPDATE cards SET idShort=NULL");
+    api.mockClear();
+    await sync.run();
+    expect(db.get("SELECT idShort FROM cards", [])).toEqual({ idShort: 42 });
+    expect(api.mock.calls.some(([url]) => url.startsWith("/cards/"))).toBe(false);
+  });
+
+  it("reports board and card progress before saving", async () => {
+    const progress = jest.fn();
+    await sync.run(progress);
+    expect(progress.mock.calls.map(([message]) => message)).toEqual([
+      "Fetching open boards...",
+      "Found 1 boards",
+      "Fetching board 1/1...",
+      "Fetching labels and card inventory for Board...",
+      "Board: processing cards 0/1",
+      "Board: processed 1/1 cards",
+      "Saving 1 cards from 1 boards...",
+    ]);
   });
 
   it("refreshes changed content and list moves", async () => {
